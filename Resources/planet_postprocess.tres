@@ -1,0 +1,32 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dllgvic4npud4"]
+
+[ext_resource type="Shader" uid="uid://vfs6biulhv8s" path="res://Shaders/terrain_postprocess.gdshader" id="1_aaxas"]
+[ext_resource type="Texture2D" uid="uid://cfk1jom2pvu87" path="res://Sprites/blue_noise1920.png" id="2_n8l8k"]
+[ext_resource type="Gradient" uid="uid://bdhk2d5kcmka" path="res://Resources/scatter_gradient.tres" id="3_n8l8k"]
+[ext_resource type="Texture2D" uid="uid://dxvkqsveqg51f" path="res://Sprites/lens_dirt.png" id="3_rhm44"]
+[ext_resource type="Texture2D" uid="uid://dk27oj7j8swot" path="res://Sprites/burst_texture.png" id="5_wwyn3"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_tfcki"]
+viewport_path = NodePath("SubViewport2")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_xktv4"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_kytga"]
+gradient = ExtResource("3_n8l8k")
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_aaxas")
+shader_parameter/raymarch_pass = SubResource("ViewportTexture_xktv4")
+shader_parameter/downsampled_raymarch_pass = SubResource("ViewportTexture_tfcki")
+shader_parameter/blue_noise = ExtResource("2_n8l8k")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/focal_length = 2.0
+shader_parameter/screen_coord = Vector3(0, 0, 0)
+shader_parameter/screen_dir = Vector3(0, 0, 0)
+shader_parameter/screen_up = Vector3(0, 0, 0)
+shader_parameter/sun_dir = Vector3(0, 0, 0)
+shader_parameter/scatter_gradient = SubResource("GradientTexture1D_kytga")
+shader_parameter/starburst_tex = ExtResource("5_wwyn3")
+shader_parameter/lens_dirt = ExtResource("3_rhm44")

@@ -1,0 +1,188 @@
+[gd_scene format=3 uid="uid://fo6vm1kd0837"]
+
+[ext_resource type="Script" uid="uid://c85tut0mdvd7d" path="res://Scenes/raymarch_camera.gd" id="1_cj70q"]
+[ext_resource type="Script" uid="uid://dmj2el188u6ri" path="res://Scenes/fetch_data.gd" id="2_cj70q"]
+[ext_resource type="Material" uid="uid://dllgvic4npud4" path="res://Resources/planet_postprocess.tres" id="2_ifbj5"]
+[ext_resource type="Shader" uid="uid://du6ppos766ywv" path="res://Shaders/sdf_infinite_terrain.gdshader" id="2_tfcki"]
+[ext_resource type="Texture2D" uid="uid://c13nrcbrbftyq" path="res://Sprites/rock_face_normal.jpg" id="3_w6juc"]
+[ext_resource type="Texture2D" uid="uid://cq8i3r1j8j358" path="res://Sprites/rock_face_diffuse.jpg" id="4_gyqoo"]
+[ext_resource type="CompressedCubemap" uid="uid://e7umjltu2430" path="res://Sprites/star_cubemap.png" id="5_fgas8"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_3xhxu"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="Gradient" id="Gradient_gltc8"]
+interpolation_mode = 2
+offsets = PackedFloat32Array(0.14150943, 0.8428571)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_xuyfh"]
+noise_type = 3
+frequency = 0.0191
+fractal_gain = 0.645
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_gxsea"]
+noise = SubResource("FastNoiseLite_xuyfh")
+color_ramp = SubResource("Gradient_gltc8")
+seamless = true
+seamless_blend_skirt = 0.496
+
+[sub_resource type="Gradient" id="Gradient_x255i"]
+offsets = PackedFloat32Array(0.36655405, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_gltc8"]
+noise_type = 3
+frequency = 0.0023
+offset = Vector3(0, 490, 0)
+fractal_type = 2
+fractal_gain = 0.53
+fractal_weighted_strength = 0.44
+domain_warp_enabled = true
+domain_warp_frequency = 0.001
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_xuyfh"]
+noise = SubResource("FastNoiseLite_gltc8")
+color_ramp = SubResource("Gradient_x255i")
+seamless = true
+seamless_blend_skirt = 0.42
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_x255i"]
+noise_type = 3
+frequency = 0.0162
+fractal_type = 2
+domain_warp_type = 1
+domain_warp_frequency = 0.015
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_gltc8"]
+noise = SubResource("FastNoiseLite_x255i")
+seamless = true
+seamless_blend_skirt = 0.596
+
+[sub_resource type="Gradient" id="Gradient_lt2so"]
+offsets = PackedFloat32Array(0, 0.7924282)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_gxsea"]
+noise_type = 2
+frequency = 0.0146
+fractal_octaves = 3
+fractal_gain = 0.72
+cellular_distance_function = 1
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_bb0s1"]
+noise = SubResource("FastNoiseLite_gxsea")
+color_ramp = SubResource("Gradient_lt2so")
+seamless = true
+seamless_blend_skirt = 0.145
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_bb0s1"]
+noise_type = 3
+frequency = 0.0319
+fractal_gain = 0.9
+domain_warp_enabled = true
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_x4alp"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_bb0s1")
+seamless = true
+seamless_blend_skirt = 0.256
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_lt2so"]
+noise_type = 3
+frequency = 0.0256
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_x255i"]
+noise = SubResource("FastNoiseLite_lt2so")
+seamless = true
+
+[sub_resource type="Gradient" id="Gradient_xuyfh"]
+interpolation_mode = 2
+offsets = PackedFloat32Array(0, 0.58097166, 1)
+colors = PackedColorArray(0.12037421, 0.3691987, 0.61667264, 1, 0.086679645, 0.20691878, 0.45194298, 1, 0.68830067, 0.9257721, 0.5942975, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_gxsea"]
+gradient = SubResource("Gradient_xuyfh")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_42r48"]
+shader = ExtResource("2_tfcki")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/focal_length = 2.0
+shader_parameter/screen_coord = Vector3(0, 0, 0)
+shader_parameter/screen_dir = Vector3(0.045, 0, 1)
+shader_parameter/screen_up = Vector3(0, 1, 0)
+shader_parameter/star_cubemap = ExtResource("5_fgas8")
+shader_parameter/sun_dir = Vector3(1, 0, 0)
+shader_parameter/sun_col = Color(1, 1, 1, 1)
+shader_parameter/noise_texture3d = SubResource("NoiseTexture3D_gltc8")
+shader_parameter/mountain_texture = SubResource("NoiseTexture2D_xuyfh")
+shader_parameter/planet_radius = 30.0
+shader_parameter/planet_centre = Vector3(0, 0, 40)
+shader_parameter/planet_rotation_axis = Vector3(0, 1, 0)
+shader_parameter/planet_rotation_speed = 0.0
+shader_parameter/rock_texture = ExtResource("4_gyqoo")
+shader_parameter/rock_normal = ExtResource("3_w6juc")
+shader_parameter/atm_radius = 55.0
+shader_parameter/cloud_texture = SubResource("NoiseTexture3D_gxsea")
+shader_parameter/cloud_height_bounds = Vector2(36, 44)
+shader_parameter/ocean_noise_texture = SubResource("NoiseTexture2D_x255i")
+shader_parameter/ocean_caustics_texture = SubResource("NoiseTexture2D_bb0s1")
+shader_parameter/ocean_foam_texture = SubResource("NoiseTexture2D_x4alp")
+shader_parameter/water_radius = 31.0
+shader_parameter/water_scatter_color_gradient = SubResource("GradientTexture1D_gxsea")
+shader_parameter/warp_radius = 3.0
+shader_parameter/outer_warp_radius = 90.0
+
+[sub_resource type="Shader" id="Shader_cj70q"]
+code = "shader_type canvas_item;
+
+void fragment() {
+	COLOR.a = 1.;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gyqoo"]
+resource_local_to_scene = true
+shader = SubResource("Shader_cj70q")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_cj70q"]
+viewport_path = NodePath("SubViewport")
+
+[node name="raymarch_3d_sdf_planet" type="Node2D" unique_id=1964357898]
+
+[node name="camera_controller" type="Node" parent="." unique_id=1876090257 node_paths=PackedStringArray("ray_march_sprite", "post_process_texture")]
+script = ExtResource("1_cj70q")
+ray_march_sprite = NodePath("../SubViewport/ColorRect")
+post_process_texture = NodePath("../TextureRect")
+
+[node name="fetch_data" type="Node" parent="." unique_id=1555590022 node_paths=PackedStringArray("camera")]
+script = ExtResource("2_cj70q")
+camera = NodePath("../camera_controller")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=472172022]
+material = ExtResource("2_ifbj5")
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = SubResource("ViewportTexture_3xhxu")
+
+[node name="SubViewport" type="SubViewport" parent="." unique_id=1973815555]
+transparent_bg = true
+use_taa = true
+use_debanding = true
+use_hdr_2d = true
+size = Vector2i(1280, 720)
+
+[node name="ColorRect" type="ColorRect" parent="SubViewport" unique_id=1755252144]
+material = SubResource("ShaderMaterial_42r48")
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="SubViewport2" type="SubViewport" parent="." unique_id=756152978]
+use_hdr_2d = true
+size = Vector2i(256, 144)
+render_target_update_mode = 4
+
+[node name="TextureRect" type="TextureRect" parent="SubViewport2" unique_id=1519502836]
+material = SubResource("ShaderMaterial_gyqoo")
+offset_right = 256.0
+offset_bottom = 144.0
+texture = SubResource("ViewportTexture_cj70q")
+expand_mode = 3
