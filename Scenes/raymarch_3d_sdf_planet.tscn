@@ -2,11 +2,43 @@
 
 [ext_resource type="Script" uid="uid://c85tut0mdvd7d" path="res://Scenes/raymarch_camera.gd" id="1_cj70q"]
 [ext_resource type="Script" uid="uid://dmj2el188u6ri" path="res://Scenes/fetch_data.gd" id="2_cj70q"]
-[ext_resource type="Material" uid="uid://dllgvic4npud4" path="res://Resources/planet_postprocess.tres" id="2_ifbj5"]
 [ext_resource type="Shader" uid="uid://du6ppos766ywv" path="res://Shaders/sdf_infinite_terrain.gdshader" id="2_tfcki"]
+[ext_resource type="Shader" uid="uid://vfs6biulhv8s" path="res://Shaders/terrain_postprocess.gdshader" id="3_r46b8"]
 [ext_resource type="Texture2D" uid="uid://c13nrcbrbftyq" path="res://Sprites/rock_face_normal.jpg" id="3_w6juc"]
+[ext_resource type="Texture2D" uid="uid://cfk1jom2pvu87" path="res://Sprites/blue_noise1920.png" id="4_6mo3k"]
 [ext_resource type="Texture2D" uid="uid://cq8i3r1j8j358" path="res://Sprites/rock_face_diffuse.jpg" id="4_gyqoo"]
+[ext_resource type="Texture2D" uid="uid://dxvkqsveqg51f" path="res://Sprites/lens_dirt.png" id="5_biw26"]
 [ext_resource type="CompressedCubemap" uid="uid://e7umjltu2430" path="res://Sprites/star_cubemap.png" id="5_fgas8"]
+[ext_resource type="Texture2D" uid="uid://dk27oj7j8swot" path="res://Sprites/burst_texture.png" id="6_t5gic"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_tfcki"]
+viewport_path = NodePath("SubViewport2")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_xktv4"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="Gradient" id="Gradient_tycyu"]
+offsets = PackedFloat32Array(0, 0.10438144, 0.2564433, 0.50128865, 0.71005154, 0.8646907, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.88340914, 0.9678955, 0.9982169, 1, 0.5148, 0.86328, 0.99, 1, 0.9127934, 0.92, 0.48759997, 1, 1, 0.5, 0.7416668, 1, 0.3840666, 0.19600001, 0.56, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_kytga"]
+gradient = SubResource("Gradient_tycyu")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lg2ty"]
+resource_local_to_scene = true
+shader = ExtResource("3_r46b8")
+shader_parameter/raymarch_pass = SubResource("ViewportTexture_xktv4")
+shader_parameter/downsampled_raymarch_pass = SubResource("ViewportTexture_tfcki")
+shader_parameter/blue_noise = ExtResource("4_6mo3k")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/focal_length = 2.0
+shader_parameter/screen_coord = Vector3(0, 0, 0)
+shader_parameter/screen_dir = Vector3(0, 0, 0)
+shader_parameter/screen_up = Vector3(0, 0, 0)
+shader_parameter/sun_dir = Vector3(0, 0, 0)
+shader_parameter/scatter_gradient = SubResource("GradientTexture1D_kytga")
+shader_parameter/starburst_tex = ExtResource("6_t5gic")
+shader_parameter/lens_dirt = ExtResource("5_biw26")
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_3xhxu"]
 viewport_path = NodePath("SubViewport")
@@ -157,7 +189,7 @@ script = ExtResource("2_cj70q")
 camera = NodePath("../camera_controller")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=472172022]
-material = ExtResource("2_ifbj5")
+material = SubResource("ShaderMaterial_lg2ty")
 offset_right = 1920.0
 offset_bottom = 1080.0
 texture = SubResource("ViewportTexture_3xhxu")
