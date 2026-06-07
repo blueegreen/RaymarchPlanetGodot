@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://fo6vm1kd0837"]
 
+[ext_resource type="Script" uid="uid://vai071i3tusg" path="res://Scenes/set_procedural_data.gd" id="1_6mo3k"]
 [ext_resource type="Script" uid="uid://c85tut0mdvd7d" path="res://Scenes/raymarch_camera.gd" id="1_cj70q"]
 [ext_resource type="Script" uid="uid://dmj2el188u6ri" path="res://Scenes/fetch_data.gd" id="2_cj70q"]
 [ext_resource type="Shader" uid="uid://du6ppos766ywv" path="res://Shaders/sdf_infinite_terrain.gdshader" id="2_tfcki"]
@@ -58,28 +59,23 @@ color_ramp = SubResource("Gradient_gltc8")
 seamless = true
 seamless_blend_skirt = 0.496
 
-[sub_resource type="Gradient" id="Gradient_x255i"]
-offsets = PackedFloat32Array(0.36655405, 1)
-
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_gltc8"]
 noise_type = 3
-frequency = 0.0023
+seed = 1
+frequency = 0.0018
 offset = Vector3(0, 490, 0)
 fractal_type = 2
-fractal_gain = 0.53
-fractal_weighted_strength = 0.44
-domain_warp_enabled = true
 domain_warp_frequency = 0.001
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_xuyfh"]
 noise = SubResource("FastNoiseLite_gltc8")
-color_ramp = SubResource("Gradient_x255i")
 seamless = true
 seamless_blend_skirt = 0.42
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_x255i"]
 noise_type = 3
-frequency = 0.0162
+seed = 22
+frequency = 0.0296
 fractal_type = 2
 domain_warp_type = 1
 domain_warp_frequency = 0.015
@@ -146,6 +142,10 @@ shader_parameter/sun_dir = Vector3(1, 0, 0)
 shader_parameter/sun_col = Color(1, 1, 1, 1)
 shader_parameter/noise_texture3d = SubResource("NoiseTexture3D_gltc8")
 shader_parameter/mountain_texture = SubResource("NoiseTexture2D_xuyfh")
+shader_parameter/terrain_threshold_min = 0.63
+shader_parameter/mountain_threshold_min = 0.115
+shader_parameter/mountain_threshold_range = 3.185
+shader_parameter/mountain_height = 5.0
 shader_parameter/planet_radius = 30.0
 shader_parameter/planet_centre = Vector3(0, 0, 40)
 shader_parameter/planet_rotation_axis = Vector3(0, 1, 0)
@@ -178,6 +178,10 @@ shader = SubResource("Shader_cj70q")
 viewport_path = NodePath("SubViewport")
 
 [node name="raymarch_3d_sdf_planet" type="Node2D" unique_id=1964357898]
+
+[node name="set_procedural_data" type="Node" parent="." unique_id=641020337 node_paths=PackedStringArray("ray_march_sprite")]
+script = ExtResource("1_6mo3k")
+ray_march_sprite = NodePath("../SubViewport/ColorRect")
 
 [node name="camera_controller" type="Node" parent="." unique_id=1876090257 node_paths=PackedStringArray("ray_march_sprite", "post_process_texture")]
 script = ExtResource("1_cj70q")

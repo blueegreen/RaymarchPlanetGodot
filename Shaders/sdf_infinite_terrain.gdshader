@@ -55,14 +55,18 @@ uniform sampler2D mountain_texture: repeat_enable, filter_linear_mipmap;
 /**
 * clamp minimum of 3d noise texture
 */
-const float terrain_threshold_min = 0.73;
+uniform float terrain_threshold_min = 0.63;
 /**
 * clamp range of 3d noise texture. This needs to be very small to prevent raymarch step wastage and artefacts.
 */
-const float terrain_threshold_range = 0.055;
+const float terrain_threshold_range = 0.085;
+
+uniform float mountain_threshold_min = 0.1;
+uniform float mountain_threshold_range = 1.;
+
 const float terrain_scaling = 20.;
 const float mountain_scaling = 1.;
-const float mountain_height = 5.;
+uniform float mountain_height = 5.;
 uniform float planet_radius = 30.;
 uniform vec3 planet_centre = vec3(0., 0., 40.);
 uniform vec3 planet_rotation_axis = vec3(0., 1., 0.);
@@ -255,6 +259,7 @@ float map_terrain(vec3 p, float lod) {
 		scene = opSubtraction(sdOctahedron(lp, warp_radius * 2.), scene);
 
 		float noise_m = triplanar_map(q, radial_dir, mountain_texture, mountain_scaling, 10., lod).r;
+		noise_m = clamp((noise_m - mountain_threshold_min) / mountain_threshold_range, 0., 1.);
 		float s = opSubtraction(sdSphere(lp, planet_radius), scene - noise_m * mountain_height);
 		scene = opUnion(scene, s);
 	}
