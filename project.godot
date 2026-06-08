@@ -8,6 +8,10 @@
 
 config_version=5
 
+[Fmod]
+
+General/should_load_by_name=true
+
 [application]
 
 config/name="raymarch_planet"

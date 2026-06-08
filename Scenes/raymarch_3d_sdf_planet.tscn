@@ -243,3 +243,5 @@ offset_right = 256.0
 offset_bottom = 144.0
 texture = SubResource("ViewportTexture_cj70q")
 expand_mode = 3
+
+[node name="audio_manager" type="Node" parent="." unique_id=972922236]
