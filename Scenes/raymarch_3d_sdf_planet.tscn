@@ -102,19 +102,15 @@ noise = SubResource("FastNoiseLite_x255i")
 seamless = true
 seamless_blend_skirt = 0.596
 
-[sub_resource type="Gradient" id="Gradient_lt2so"]
-offsets = PackedFloat32Array(0, 0.7924282)
-
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_gxsea"]
 noise_type = 2
-frequency = 0.0146
+frequency = 0.0268
 fractal_octaves = 3
 fractal_gain = 0.72
 cellular_distance_function = 1
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_bb0s1"]
 noise = SubResource("FastNoiseLite_gxsea")
-color_ramp = SubResource("Gradient_lt2so")
 seamless = true
 seamless_blend_skirt = 0.145
 
