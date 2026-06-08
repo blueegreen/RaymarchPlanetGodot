@@ -7,10 +7,10 @@
 [ext_resource type="Shader" uid="uid://vfs6biulhv8s" path="res://Shaders/terrain_postprocess.gdshader" id="3_r46b8"]
 [ext_resource type="Texture2D" uid="uid://c13nrcbrbftyq" path="res://Sprites/rock_face_normal.jpg" id="3_w6juc"]
 [ext_resource type="Texture2D" uid="uid://cfk1jom2pvu87" path="res://Sprites/blue_noise1920.png" id="4_6mo3k"]
-[ext_resource type="Texture2D" uid="uid://cq8i3r1j8j358" path="res://Sprites/rock_face_diffuse.jpg" id="4_gyqoo"]
 [ext_resource type="Texture2D" uid="uid://dxvkqsveqg51f" path="res://Sprites/lens_dirt.png" id="5_biw26"]
 [ext_resource type="CompressedCubemap" uid="uid://e7umjltu2430" path="res://Sprites/star_cubemap.png" id="5_fgas8"]
 [ext_resource type="Texture2D" uid="uid://dk27oj7j8swot" path="res://Sprites/burst_texture.png" id="6_t5gic"]
+[ext_resource type="Texture2D" uid="uid://db24s52r7v5ne" path="res://Sprites/rock_face_diffuse.png" id="10_6mo3k"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_tfcki"]
 viewport_path = NodePath("SubViewport2")
@@ -59,6 +59,21 @@ color_ramp = SubResource("Gradient_gltc8")
 seamless = true
 seamless_blend_skirt = 0.496
 
+[sub_resource type="Gradient" id="Gradient_6mo3k"]
+offsets = PackedFloat32Array(0, 0.22096774, 1)
+colors = PackedColorArray(0.089835234, 0.07448398, 0.012945734, 1, 0.1971381, 0.25109082, 0.049916945, 1, 4.1392445e-06, 0.5109543, 0.12319303, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_biw26"]
+gradient = SubResource("Gradient_6mo3k")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_6mo3k"]
+noise_type = 3
+frequency = 0.0069
+fractal_octaves = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_biw26"]
+noise = SubResource("FastNoiseLite_6mo3k")
+
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_gltc8"]
 noise_type = 3
 seed = 1
@@ -103,7 +118,7 @@ seamless_blend_skirt = 0.145
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_bb0s1"]
 noise_type = 3
-frequency = 0.0319
+frequency = 0.0651
 fractal_gain = 0.9
 domain_warp_enabled = true
 
@@ -116,7 +131,7 @@ seamless_blend_skirt = 0.256
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_lt2so"]
 noise_type = 3
-frequency = 0.0256
+frequency = 0.0537
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_x255i"]
 noise = SubResource("FastNoiseLite_lt2so")
@@ -125,7 +140,7 @@ seamless = true
 [sub_resource type="Gradient" id="Gradient_xuyfh"]
 interpolation_mode = 2
 offsets = PackedFloat32Array(0, 0.58097166, 1)
-colors = PackedColorArray(0.12037421, 0.3691987, 0.61667264, 1, 0.086679645, 0.20691878, 0.45194298, 1, 0.68830067, 0.9257721, 0.5942975, 1)
+colors = PackedColorArray(0.12037421, 0.3691987, 0.61667264, 1, 0.086679645, 0.20691878, 0.45194298, 1, 0.42715353, 0.9692021, 0.6966715, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_gxsea"]
 gradient = SubResource("Gradient_xuyfh")
@@ -134,8 +149,8 @@ gradient = SubResource("Gradient_xuyfh")
 shader = ExtResource("2_tfcki")
 shader_parameter/resolution = Vector2(1920, 1080)
 shader_parameter/focal_length = 2.0
-shader_parameter/screen_coord = Vector3(0, 0, 0)
-shader_parameter/screen_dir = Vector3(0.045, 0, 1)
+shader_parameter/screen_coord = Vector3(0, 0, -8.995)
+shader_parameter/screen_dir = Vector3(0, 0, 1)
 shader_parameter/screen_up = Vector3(0, 1, 0)
 shader_parameter/star_cubemap = ExtResource("5_fgas8")
 shader_parameter/sun_dir = Vector3(1, 0, 0)
@@ -143,15 +158,19 @@ shader_parameter/sun_col = Color(1, 1, 1, 1)
 shader_parameter/noise_texture3d = SubResource("NoiseTexture3D_gltc8")
 shader_parameter/mountain_texture = SubResource("NoiseTexture2D_xuyfh")
 shader_parameter/terrain_threshold_min = 0.63
-shader_parameter/mountain_threshold_min = 0.115
-shader_parameter/mountain_threshold_range = 3.185
+shader_parameter/mountain_threshold_min = 0.1
+shader_parameter/mountain_threshold_range = 1.0
 shader_parameter/mountain_height = 5.0
 shader_parameter/planet_radius = 30.0
 shader_parameter/planet_centre = Vector3(0, 0, 40)
 shader_parameter/planet_rotation_axis = Vector3(0, 1, 0)
 shader_parameter/planet_rotation_speed = 0.0
-shader_parameter/rock_texture = ExtResource("4_gyqoo")
+shader_parameter/rock_texture = ExtResource("10_6mo3k")
 shader_parameter/rock_normal = ExtResource("3_w6juc")
+shader_parameter/beach_col = Color(0.7387193, 0.6156146, 0.60133904, 1)
+shader_parameter/snow_col = Color(0.9678535, 0.9729337, 0.9743394, 1)
+shader_parameter/grass_noise = SubResource("NoiseTexture2D_biw26")
+shader_parameter/grass_color = SubResource("GradientTexture1D_biw26")
 shader_parameter/atm_radius = 55.0
 shader_parameter/cloud_texture = SubResource("NoiseTexture3D_gxsea")
 shader_parameter/cloud_height_bounds = Vector2(36, 44)

@@ -24,9 +24,9 @@ uniform vec3 screen_up = vec3(0.0, 1.0, 0.0);
 
 group_uniforms RenderUniforms;
 const int binary_search_steps = 8;
-const float min_step_size = 0.005;
+const float min_step_size = 0.01;
 const float max_t = 100.;
-const int max_steps = 96;
+const int max_steps = 256;
 /**
 * epsilon value when calculating normals
 */
@@ -78,6 +78,23 @@ uniform sampler2D rock_normal: repeat_enable, filter_linear_mipmap;
 const float rock_specular = 24.;
 const float texture_scaling = .315;
 const float texture_normal_map_strength = .7;
+uniform vec3 beach_col: source_color;
+uniform vec3 snow_col: source_color;
+
+group_uniforms GrassUniforms;
+uniform sampler2D grass_noise: repeat_enable, filter_linear_mipmap;
+uniform sampler2D grass_color;
+const vec2 grass_elevation_range = vec2(1.6, 3.);
+const float grass_density = 1.;
+const float grass_coverage = .2;
+const float grass_max_height = .3;
+const float grass_frequency = 50.;
+const float step_size_in_grass = 0.04;
+const float wind_str = 2.;
+const float wind_frq = .1;
+const float wind_speed = .05;
+const vec3 wind_dir = vec3(1., 0.5, 0.);
+
 
 group_uniforms AtmosphereUniforms;
 uniform float atm_radius = 55.;
@@ -241,17 +258,20 @@ vec4 triplanar_map(vec3 p, vec3 n, sampler2D tex, float scale, float sharpness, 
 //main sdf / noise calculation for terrain
 float map_terrain(vec3 p, float lod) {
 	vec3 q = planet_pos(p);
-	vec3 radial_dir = normalize(q);
+	vec3 lp = p - planet_centre;
+	vec3 radial_dir = normalize(lp);
 	
 	//lerp the sampled noise based on threshold and range
 	//note that this is NOT clamped, which is actually better for conservative sphere tracing
 	//however, threshold range must be kept small, as a large threshold range results in increasingly
 	//smaller sdf values, which causes the ray to take smaller and smaller steps and causes artefacting
-	float scene = (textureLod(noise_texture3d, q, lod).r - terrain_threshold_min) 
+	float scene = 
+		(textureLod(noise_texture3d, q, lod).r - terrain_threshold_min)
 		/ terrain_threshold_range;
-
+	
+	//scene += 1.5 * max(elevation - planet_radius, 0.);
+	
 	{
-		vec3 lp = p - planet_centre;
 		vec3 lp_rotating = lp * rotate3D(normalize(sun_dir), TIME * 0.5);
 		scene = opIntersection(scene, sdSphere(lp, planet_radius));
 		scene = opSubtraction(sdSphere(lp, warp_radius * 2.), scene);
@@ -272,19 +292,6 @@ float map_terrain(vec3 p, float lod) {
 	scene = opUnion(scene, sdSphere(p - (planet_centre - vec3(1., .3, 0.) * 80.), 5.));
 	
 	return scene;
-}
-
-//if p0 + rd * t still at safe position, but next step would result in collision
-float binary_backtrace(float t, float step_size, vec3 p0, vec3 rd, float lod) {
-	float t_safe = t;
-	float binary_term = 0.5;
-	for (int i = 0; i < binary_search_steps; i++) {
-		float mid_t = t_safe + step_size * binary_term;
-		if (map_terrain(p0 + rd * mid_t, lod) > 0.0)
-			t_safe = mid_t;
-		binary_term *= 0.5;
-	}
-	return t_safe;
 }
 
 //gets normal at global position based on tetrahedron method, + triplanar map to get rock texture
@@ -316,21 +323,111 @@ vec3 map_normal(vec3 pos, float lod) {
 	return normalize(geo_n + texture_normal_map_strength * (nX * w.x + nY * w.y + nZ * w.z));
 }
 
+
+float hash21(vec2 p) {
+	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec2 get_triplanar_uv(vec3 p, vec3 n) {
+	p = fract(p);
+	
+	n.x += .2 * (hash21(p.yz) * 2.0 - 1.0);
+	n.y += .2 * (hash21(p.xz) * 2.0 - 1.0);
+	n.z += .2 * (hash21(p.xy) * 2.0 - 1.0);
+
+	n = normalize(n);
+	vec3 w = abs(n);
+	w /= dot(w, vec3(1.0));
+	
+	return (w.x > w.y && w.x > w.z) ? p.yz 
+		: (w.y > w.x && w.y > w.z) ? p.xz 
+		: p.xy;
+}
+
+float is_p_in_grass(vec3 p) {
+	float height_above_sealevel = distance(p, planet_centre) - planet_radius;
+	float ratio =
+		(height_above_sealevel - grass_elevation_range.x)
+		/ (grass_elevation_range.y + grass_max_height - grass_elevation_range.x);
+	if (ratio < 0. || ratio > 1.) return -1.;
+	return ratio;
+}
+
+vec2 map_terrain_and_grass(vec3 p, float lod) {
+	float base_terrain = map_terrain(p, lod);
+	float grass_ratio = is_p_in_grass(p);
+	if (grass_ratio < 0.) return vec2(base_terrain, 1.);
+	if (base_terrain < min_step_size || base_terrain > grass_max_height) return vec2(base_terrain - grass_max_height * 0.9, 1.);
+	
+	vec3 terrain_normal = map_normal(p, lod);
+	vec3 planet_normal = normalize(p - planet_centre);
+	
+	float sample_wind = texture(grass_noise, (p - base_terrain * terrain_normal).xz * wind_frq + TIME * wind_speed).r;
+	sample_wind = sample_wind * 2.0 - 1.0;
+	float wave = sample_wind * wind_str;
+	vec3 wind_disp = normalize(wind_dir) * wave * base_terrain;
+	p += wind_disp;
+	
+	vec2 s_uv = get_triplanar_uv(p, terrain_normal); 
+	
+	float base_grass_mask = 
+		smoothstep((1. - grass_density), 1.,
+		hash21(floor(s_uv * grass_frequency)));
+	base_grass_mask *= 
+		smoothstep(0., 1. - grass_coverage,
+		textureLod(grass_noise, get_triplanar_uv(p, planet_normal) * .2, lod).r);
+
+	float height_mask = 
+		1. - smoothstep(0., base_grass_mask * grass_max_height, base_terrain);
+		
+	height_mask *=
+		smoothstep(0., 0.5, grass_ratio) 
+		* smoothstep(1., 0.5, grass_ratio)
+		* smoothstep(0.4, 0.7, dot(terrain_normal, planet_normal));
+	
+	
+	float dist_from_centre = length(fract(s_uv * grass_frequency) - vec2(0.5));
+	float taper_mask = 1. - smoothstep(0., 0.707 * height_mask, dist_from_centre);
+	
+	if (taper_mask > 0.) return vec2(0., 1. - height_mask);
+	
+	return vec2(step_size_in_grass, 1.);
+}
+
+
+//if p0 + rd * t still at safe position, but next step would result in collision
+float binary_refinement(float t, float step_size, vec3 p0, vec3 rd, float lod) {
+	float t_safe = t;
+	float binary_term = 0.5;
+	for (int i = 0; i < binary_search_steps; i++) {
+		float mid_t = t_safe + step_size * binary_term;
+		if (map_terrain(p0 + rd * mid_t, lod) > 0.0)
+			t_safe = mid_t;
+		binary_term *= 0.5;
+	}
+	return t_safe;
+}
+
 //colour of terrain at global position, samples rock texture
 //need to update to allow multiple materials
 vec3 colour_terrain(vec3 p, vec3 n, float lod) {
 	vec3 q = planet_pos(p);
 	vec3 base_color = triplanar_map(q, n, rock_texture, texture_scaling, 10., lod).rgb;
-	float slope = 1. - abs(dot(normalize(q), n));
-	float elevation = distance(p, planet_centre) - planet_radius + (texture(ocean_noise_texture, p.xz).r * 2.0 - 1.0);
+	float slope = abs(dot(normalize(q), n));
+	float dist_to_centre =  distance(p, planet_centre);
+	float elevation = dist_to_centre - planet_radius;
+	float elevation_sea_level = dist_to_centre - water_radius;
+	float jittered_elevation = elevation + 1. * (texture(ocean_noise_texture, p.xz).r * 2.0 - 1.0);
 	
-	float snow_layer = smoothstep(2.8, 3.5, elevation) * smoothstep(10., 3.5, elevation);
-	float steep_mask = 1. - smoothstep(.2, .25, slope);
+	float snow_layer = smoothstep(3.2, 4.0, jittered_elevation) * smoothstep(10., 3.5, jittered_elevation);
+	float steep_mask = smoothstep(.2, .25, slope);
 	
-	base_color = mix(base_color, vec3(1.), step(0.1, snow_layer * steep_mask));
-
+	vec3 final_color = mix(base_color, snow_col, step(0.1, snow_layer * steep_mask));
 	
-	return base_color;
+	float beach_mask = step(0., elevation_sea_level) * smoothstep(grass_elevation_range.x, grass_elevation_range.x - .3, elevation) * smoothstep(0.2, 0.3, slope);
+	final_color = mix(final_color, beach_col * base_color, beach_mask);
+	
+	return final_color;
 }
 
 //simple ambient occlusion march
@@ -598,6 +695,23 @@ vec3 light_terrain(vec3 p0, vec3 rd, vec3 n, vec3 sun_dir_norm, float lod) {
 	return sun_col * shadow * (diffuse + specular) * sun_intensity;
 }
 
+vec3 light_grass(vec3 p, vec3 rd, vec3 normal, vec3 sun_dir_norm, float lod) {
+	vec3 tangent = normal; 
+	vec3 view_dir = -rd;
+
+	float dotTL = max(dot(tangent, sun_dir_norm), 0.);
+	float diffuse = sqrt(max(1.0 - dotTL * dotTL, 0.0));
+
+	vec3 half_vector = normalize(sun_dir_norm + view_dir);
+	float dotTH = max(dot(tangent, half_vector), 0.);
+	float sinTH = sqrt(max(1.0 - dotTH * dotTH, 0.0));
+	float specular = .5 * pow(sinTH, 96.);
+	float terrain_shadow = get_soft_shadow(p, normal, sun_dir_norm, lod);
+	float cloud_shadow = cloud_shadow_transmittance(p, sun_dir_norm);
+	float shadow = clamp(terrain_shadow * cloud_shadow + ambient_str, 0., 1.);
+	return sun_col * shadow * (diffuse + specular) * sun_intensity;
+}
+
 float get_fresnel(float f0, float ndotv) {
 	return f0 + (1. - f0) * pow(1. - max(0., ndotv), 5.);
 }
@@ -610,7 +724,13 @@ float get_beach_foam(vec3 p, vec3 light_dir, float lod) {
 	
 	float pole_fade = 1. - smoothstep(.9, 1., abs(n.y));
 	float mask = (1. - smoothstep(0., 1., h / beach_foam_dist));
-	float noise_mask = textureLod(ocean_foam_texture, (get_spherical_uv(n) + TIME * 0.001) * 30., lod).r;
+	
+	vec2 s_uv = get_spherical_uv(n);
+	float noise1 = textureLod(ocean_foam_texture, (s_uv + TIME * 0.001) * 5., lod).r;
+	float noise2 = textureLod(ocean_foam_texture, (s_uv - TIME * 0.003) * 15., lod).r;
+	float noise_mask = (noise1 + noise2) * 0.5;
+	
+	
 	noise_mask = clamp((noise_mask - 0.4) * 5., 0., 1.);
 	float surf_white = 1. - smoothstep(0., 0.2 * beach_foam_dist, h);
 	
@@ -726,7 +846,7 @@ vec4 march_ocean(vec3 p0, vec3 rd, float t_terrain, vec3 sun_dir_norm, vec2 ocea
 		float h = map_terrain(p, lod);
 		
 		if (h <= min_step_size) {
-			t = binary_backtrace(prev_t, t - prev_t, p0, rd, lod);
+			t = binary_refinement(prev_t, t - prev_t, p0, rd, lod);
 			p = p0 + rd * t;
 			break;
 		}
@@ -891,12 +1011,13 @@ vec4 march_terrain(vec3 p0, vec3 rd) {
 	float t = 0.0;
 	float prev_t = 0.0;
 	float occlusion = 1.0;
+	vec2 h = vec2(1e10, 1.);
 
 	for (int i = 0; i < max_steps && t < max_t; i++) {
 	    lod = t / lod_bias;
-	    float h = map_terrain(p, lod);
-	    if (h <= min_step_size) {
-	        t = binary_backtrace(prev_t, t - prev_t, p0, rd, lod);
+	    h = map_terrain_and_grass(p, lod);
+	    if (h.x <= min_step_size) {
+	        t = binary_refinement(prev_t, t - prev_t, p0, rd, lod);
 			if (t >= ocean_hit.x) t = ocean_hit.x;
 	        p = p0 + rd * t;
 			occlusion = 0.;
@@ -908,7 +1029,7 @@ vec4 march_terrain(vec3 p0, vec3 rd) {
 			break;
 		}
 	    prev_t = t;
-	    t += h * ray_subdivision;
+	    t += h.x * ray_subdivision;
 	    p = p0 + rd * t;
 	}
 
@@ -924,7 +1045,12 @@ vec4 march_terrain(vec3 p0, vec3 rd) {
 		occlusion = min(occlusion, ocean_col.a);
 	} else {
 		vec3 n = map_normal(p, lod);
-		lit_col = colour_terrain(p, n, lod) * light_terrain(p, rd, n, sun_dir_norm, lod).rgb;
+		if (h.y > 0.95) {
+			lit_col = colour_terrain(p, n, lod) * light_terrain(p, rd, n, sun_dir_norm, lod).rgb;
+		}
+		else {
+			lit_col = texture(grass_color, vec2(h.y)).rgb * light_grass(p, rd, n, sun_dir_norm, lod);
+		}
 	}
 
 	vec4 cloud_col = march_clouds(p0, rd, t, lit_col, sun_dir_norm, ocean_hit);

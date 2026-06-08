@@ -34,6 +34,7 @@ func set_mountains():
 	
 	var noise_generator := FastNoiseLite.new()
 	noise_generator.noise_type = FastNoiseLite.TYPE_PERLIN
+	noise_generator.seed = randi()
 	noise_generator.frequency = randf_range(0.0005, 0.002)
 	noise_generator.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 	noise_generator.fractal_gain = randf_range(0.4, 0.7)
