@@ -233,6 +233,9 @@ float sdOctahedron( vec3 p, float s ) {
 	return length(vec3(q.x,q.y-s+k,q.z-k)); 
 }
 
+float hash21(vec2 p) {
+	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 //orients global position to planet local position
 vec3 planet_pos(vec3 p) {
@@ -253,6 +256,22 @@ vec4 triplanar_map(vec3 p, vec3 n, sampler2D tex, float scale, float sharpness, 
 	vec3 w = pow(abs(n), vec3(sharpness));
 	w /= dot(w, vec3(1.0));
 	return sx * w.x + sy * w.y + sz * w.z;
+}
+
+vec2 get_triplanar_uv(vec3 p, vec3 n) {
+	p = fract(p);
+	
+	n.x += .2 * (hash21(p.yz) * 2.0 - 1.0);
+	n.y += .2 * (hash21(p.xz) * 2.0 - 1.0);
+	n.z += .2 * (hash21(p.xy) * 2.0 - 1.0);
+
+	n = normalize(n);
+	vec3 w = abs(n);
+	w /= dot(w, vec3(1.0));
+	
+	return (w.x > w.y && w.x > w.z) ? p.yz 
+		: (w.y > w.x && w.y > w.z) ? p.xz 
+		: p.xy;
 }
 
 //main sdf / noise calculation for terrain
@@ -277,7 +296,7 @@ float map_terrain(vec3 p, float lod) {
 		scene = opSubtraction(sdSphere(lp, warp_radius * 2.), scene);
 		scene = opUnion(scene, sdBox(lp_rotating, vec3(warp_radius)));
 		scene = opSubtraction(sdOctahedron(lp, warp_radius * 2.), scene);
-
+		
 		float noise_m = triplanar_map(q, radial_dir, mountain_texture, mountain_scaling, 10., lod).r;
 		noise_m = clamp((noise_m - mountain_threshold_min) / mountain_threshold_range, 0., 1.);
 		float s = opSubtraction(sdSphere(lp, planet_radius), scene - noise_m * mountain_height);
@@ -323,27 +342,6 @@ vec3 map_normal(vec3 pos, float lod) {
 	return normalize(geo_n + texture_normal_map_strength * (nX * w.x + nY * w.y + nZ * w.z));
 }
 
-
-float hash21(vec2 p) {
-	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-vec2 get_triplanar_uv(vec3 p, vec3 n) {
-	p = fract(p);
-	
-	n.x += .2 * (hash21(p.yz) * 2.0 - 1.0);
-	n.y += .2 * (hash21(p.xz) * 2.0 - 1.0);
-	n.z += .2 * (hash21(p.xy) * 2.0 - 1.0);
-
-	n = normalize(n);
-	vec3 w = abs(n);
-	w /= dot(w, vec3(1.0));
-	
-	return (w.x > w.y && w.x > w.z) ? p.yz 
-		: (w.y > w.x && w.y > w.z) ? p.xz 
-		: p.xy;
-}
-
 float is_p_in_grass(vec3 p) {
 	float height_above_sealevel = distance(p, planet_centre) - planet_radius;
 	float ratio =
@@ -375,7 +373,7 @@ vec2 map_terrain_and_grass(vec3 p, float lod) {
 		hash21(floor(s_uv * grass_frequency)));
 	base_grass_mask *= 
 		smoothstep(0., 1. - grass_coverage,
-		textureLod(grass_noise, get_triplanar_uv(p, planet_normal) * .2, lod).r);
+		textureLod(grass_noise, get_triplanar_uv(p, planet_normal) * .1, lod).r);
 
 	float height_mask = 
 		1. - smoothstep(0., base_grass_mask * grass_max_height, base_terrain);
@@ -420,6 +418,7 @@ vec3 colour_terrain(vec3 p, vec3 n, float lod) {
 	float jittered_elevation = elevation + 1. * (texture(ocean_noise_texture, p.xz).r * 2.0 - 1.0);
 	
 	float snow_layer = smoothstep(3.2, 4.0, jittered_elevation) * smoothstep(10., 3.5, jittered_elevation);
+	snow_layer = mix(snow_layer, 0., abs(dot(n, normalize(sun_dir))));
 	float steep_mask = smoothstep(.2, .25, slope);
 	
 	vec3 final_color = mix(base_color, snow_col, step(0.1, snow_layer * steep_mask));
