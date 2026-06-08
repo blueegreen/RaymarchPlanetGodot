@@ -8,6 +8,11 @@
 
 config_version=5
 
+[Fmod]
+
+General/should_load_by_name=true
+General/banks_path="res://FmodBanks/Desktop"
+
 [application]
 
 config/name="raymarch_planet"
