@@ -11,7 +11,6 @@
 [ext_resource type="CompressedCubemap" uid="uid://e7umjltu2430" path="res://Sprites/star_cubemap.png" id="5_fgas8"]
 [ext_resource type="Texture2D" uid="uid://dk27oj7j8swot" path="res://Sprites/burst_texture.png" id="6_t5gic"]
 [ext_resource type="Texture2D" uid="uid://db24s52r7v5ne" path="res://Sprites/rock_face_diffuse.png" id="10_6mo3k"]
-[ext_resource type="Script" uid="uid://b2and0q6ooh4y" path="res://Scenes/audio_manager.gd" id="12_biw26"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_tfcki"]
 viewport_path = NodePath("SubViewport2")
@@ -244,6 +243,3 @@ offset_right = 256.0
 offset_bottom = 144.0
 texture = SubResource("ViewportTexture_cj70q")
 expand_mode = 3
-
-[node name="audio_manager" type="Node" parent="." unique_id=972922236]
-script = ExtResource("12_biw26")
