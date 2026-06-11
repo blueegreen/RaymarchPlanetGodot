@@ -105,7 +105,7 @@ group_uniforms CloudUniforms;
 uniform sampler3D cloud_texture : repeat_enable, filter_linear_mipmap;
 uniform vec2 cloud_height_bounds = vec2(36.0, 44.0);
 const float cloud_speed = 0.01;
-const float cloud_scaling_factor = 15.0;
+const float cloud_scaling_factor = 13.0;
 const float cloud_density = 0.6;
 const float extinction_mult = 0.7;
 const float scattering_mu = 1.33;
@@ -137,10 +137,10 @@ const float water_specular_strength = 0.1;
 const float caustics_scale = 0.03;
 const float caustics_speed = 0.05;
 const float caustics_str = 0.9;
-const float beach_foam_dist = 1.0;
-const float beach_foam_wavelets = 3.0;
-const float wavelet_speed = 2.0;
-const float beach_foam_str = 1.0;
+const float beach_foam_dist = 0.8;
+const float beach_foam_wavelets = 6.0;
+const float wavelet_speed = 6.0;
+const float beach_foam_str = 0.6;
 /**
 * fun warp effect, needs gdscript to trigger properly
 * if p_from_centre.length() <= warp_radius * 0.5:

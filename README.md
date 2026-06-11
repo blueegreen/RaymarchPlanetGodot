@@ -10,19 +10,23 @@ Shift -> boost
 
 
 
+Right Click -> Regenerate Planet 
+
+
+
 
 
 Overview:
 
 
 
-This is a raymarching project that compiles a bunch of the stuff I learned regarding raymarching, procedural generation and rendering techniques over the last few weeks. 
+This is a raymarching project that compiles a bunch of the stuff I learned regarding raymarching, procedural generation and rendering techniques over the last few weeks.
 
 
 
 SDF rendering:
 
-The basic idea behind the 3-dimensional rendering is to imagine the 2d sprite / rect as a screen oriented in 3d space. For this, the uv's are first converted to clip-space (vec2(-1, -1) to vec2(1, 1)), then, using uniforms, a ray direction associated with each fragment can be generated. I used a screen coord, screen dir, and screen up uniform which encode the world-space position of the center of the screen, the normal direction of the screen, and the up direction of the screen respectively. These can then be modified via gdscript at runtime to simulate the player / camera moving through space. 
+The basic idea behind the 3-dimensional rendering is to imagine the 2d sprite / rect as a screen oriented in 3d space. For this, the uv's are first converted to clip-space (vec2(-1, -1) to vec2(1, 1)), then, using uniforms, a ray direction associated with each fragment can be generated. I used a screen coord, screen dir, and screen up uniform which encode the world-space position of the center of the screen, the normal direction of the screen, and the up direction of the screen respectively. These can then be modified via gdscript at runtime to simulate the player / camera moving through space.
 
 
 
@@ -64,7 +68,7 @@ Note: in the beer's law exponentiation term, a scattering coefficient is multipl
 
 Clouds:
 
-The clouds are a similar sort of volumetric marching, but the in-scattering is anisotropic and uses a complicated looking Henyey-Greenstein phase function with multiple octave scattering (it just works, I don't understand the exact theory). The basic transmittance is again given by Beer's law, although there is another approach outlined in the Horizon Zero Dawn cloud rendering presentation - where a modified Beer's Powder equation can be used to darken the edges  of clouds as well. ( transmittance = exp(-t) - exp(-2t) ) 
+The clouds are a similar sort of volumetric marching, but the in-scattering is anisotropic and uses a complicated looking Henyey-Greenstein phase function with multiple octave scattering (it just works, I don't understand the exact theory). The basic transmittance is again given by Beer's law, although there is another approach outlined in the Horizon Zero Dawn cloud rendering presentation - where a modified Beer's Powder equation can be used to darken the edges  of clouds as well. ( transmittance = exp(-t) - exp(-2t) )
 
 
 
@@ -72,13 +76,13 @@ The cloud noise sampling is also a little bit of a challenge, as sampling 3d noi
 
 
 
-Note, the clouds pass happens before the atmosphere, which lends some nice atmospheric perspective to the clouds. 
+Note, the clouds pass happens before the atmosphere, which lends some nice atmospheric perspective to the clouds.
 
 
 
 Ocean:
 
-The ocean raymarch is definitely a conditional nightmare, and a lot of possible paths are evaluated. Rays split when entering / exiting the surface into reflected and refracted rays, and all rays going above the surface must then again evaluate terrain, atmosphere and clouds. In my implementation, I divide up the raymarch into an underwater and above-water pass, with the latter being skippable if no ray exits the surface. If the ray is to exit the surface (via refraction / reflection), the point of exit and direction is set depending on when and where it happens. The ocean surface normal is given by normalize(p - planet\_centre) + some perturbation with a noise texture, and as the surface is distorted, above water rays always sample with very low LODs. Finally, another conditional check applies the ocean color depending on whether the camera is underwater or above-water. 
+The ocean raymarch is definitely a conditional nightmare, and a lot of possible paths are evaluated. Rays split when entering / exiting the surface into reflected and refracted rays, and all rays going above the surface must then again evaluate terrain, atmosphere and clouds. In my implementation, I divide up the raymarch into an underwater and above-water pass, with the latter being skippable if no ray exits the surface. If the ray is to exit the surface (via refraction / reflection), the point of exit and direction is set depending on when and where it happens. The ocean surface normal is given by normalize(p - planet\_centre) + some perturbation with a noise texture, and as the surface is distorted, above water rays always sample with very low LODs. Finally, another conditional check applies the ocean color depending on whether the camera is underwater or above-water.
 
 
 
@@ -101,7 +105,8 @@ Post Processing:
 Post processing a fragment shader is a very hacky process as multiple passes aren't really supported out of the box - and thus it's simulated using subviewports and texture\_rects. I followed a couple of steps to get the necessary data for post-processing from my base fragment shader:
 
 
-The main shader is rendered at a lower resolution (1280 / 720) within a subviewport of the same size, then rendered onto a full resolution texture rect. I wanted to do screenspace godrays, which require an occlusion mask - to do this, the occlusion data (which is simple enough to collect, if ray hits terrain / clouds, occlusion happens) is packed into the alpha channel of the main shader. Then, in the texture\_rect, the alpha value is sampled for proper occlusion, and the final alpha is set to 1. 
+
+The main shader is rendered at a lower resolution (1280 / 720) within a subviewport of the same size, then rendered onto a full resolution texture rect. I wanted to do screenspace godrays, which require an occlusion mask - to do this, the occlusion data (which is simple enough to collect, if ray hits terrain / clouds, occlusion happens) is packed into the alpha channel of the main shader. Then, in the texture\_rect, the alpha value is sampled for proper occlusion, and the final alpha is set to 1.
 
 
 
@@ -208,3 +213,4 @@ Blue Noise Textures
 
 
 https://github.com/Calinou/free-blue-noise-textures
+
